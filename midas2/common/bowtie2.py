@@ -37,7 +37,8 @@ def build_bowtie2_db(bt2_db_dir, bt2_db_name, downloaded_files, num_cores):
             command("cat " + " ".join(files) + f" >> {bt2_db_dir}/{bt2_db_name}.fa")
 
         try:
-            command(f"bowtie2-build --threads {num_cores} {bt2_db_prefix}.fa {bt2_db_prefix} > {bt2_db_dir}/bt2-db-build-{bt2_db_name}.log", quiet=False)
+            # command(f"bowtie2-build --threads {num_cores} {bt2_db_prefix}.fa {bt2_db_prefix} > {bt2_db_dir}/bt2-db-build-{bt2_db_name}.log", quiet=False)
+            command(f"nvBWT {bt2_db_prefix}.fa {bt2_db_prefix} > {bt2_db_dir}/bt2-db-build-{bt2_db_name}.log", quiet=False)
         except:
             tsprint(f"Bowtie2 index {bt2_db_prefix} run into error")
             command(f"rm -f {bt2_db_prefix}.1.bt2")
@@ -48,7 +49,7 @@ def build_bowtie2_db(bt2_db_dir, bt2_db_name, downloaded_files, num_cores):
 
 def bowtie2_align(bt2_db_dir, bt2_db_name, bamfile_path, args):
     """ Use Bowtie2 to map reads to prebuilt bowtie2 database """
-
+    samfile_path = bamfile_path.split(".bam")[0]+".sam"
     bt2_db_prefix = f"{bt2_db_dir}/{bt2_db_name}"
 
     if os.path.exists(bamfile_path):
@@ -70,9 +71,13 @@ def bowtie2_align(bt2_db_dir, bt2_db_name, bamfile_path, args):
         r1 = f"-U {args.r1}"
 
     try:
-        bt2_command = f"bowtie2 --no-unal -x {bt2_db_prefix} {max_fraglen} {max_reads} --{aln_mode} --{aln_speed} --threads {args.num_cores} -q {r1} {r2}"
-        command(f"set -o pipefail; {bt2_command} | \
-                samtools view --threads {args.num_cores} -b - | \
+        tsprint(f"Using nvBowtie")
+        ## Paired-end all-mode is currently not supported
+        bt2_command = f"nvBowtie -x {bt2_db_prefix} {r1} {r2} --{aln_mode} --{aln_speed} {max_fraglen} {max_reads} -S {samfile_path}"
+        command(bt2_command, quiet=False)
+        #command(f"samtools sort --threads {args.num_cores} -o {bamfile_path} {bamfile_path}")
+        #bt2_command = f"bowtie2 --no-unal -x {bt2_db_prefix} {max_fraglen} {max_reads} --{aln_mode} --{aln_speed} --threads {args.num_cores} -q {r1} {r2}"
+        command(f"set -o pipefail; samtools view -F4 --threads {args.num_cores} -b {samfile_path} | \
                 samtools sort --threads {args.num_cores} -o {bamfile_path}", quiet=False)
     except:
         tsprint(f"Bowtie2 align to {bamfile_path} run into error")
