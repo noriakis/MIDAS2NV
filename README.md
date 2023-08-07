@@ -1,4 +1,11 @@
+
 # Metagenomic Intra-Species Diversity Analysis 2
+
+This version is modified to use [`nvbio`](https://github.com/NVlabs/nvbio) for metagenotyping using MIDAS2, enabling use of GPU in the analysis. Specifically, `nvBWT` and `nvBowtie` are used internally. The result for metagenotyping of the subset sample `SRR19064419` is shown below (using `seqkit sample -p 0.1`). The path to `nvBWT` and `nvBowtie` should be set in environmental variables.
+
+<p align="center">
+<img src="https://github.com/noriakis/software/blob/main/images/nvres.png?raw=true" width=400px>
+</p>
 
 [![DOI](https://zenodo.org/badge/195910808.svg)](https://zenodo.org/badge/latestdoi/195910808)
 
