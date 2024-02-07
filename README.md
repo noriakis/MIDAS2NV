@@ -1,7 +1,7 @@
 
 # Metagenomic Intra-Species Diversity Analysis 2
 
-This version is modified to use [`nvbio`](https://github.com/NVlabs/nvbio) for metagenotyping using MIDAS2, enabling use of GPU in the analysis. Specifically, `nvBWT` and `nvBowtie` are used internally. The result for metagenotyping of the subset sample `SRR19064419` is shown below (using `seqkit sample -p 0.1`). The path to `nvBWT` and `nvBowtie` should be set in environmental variables.
+This version is modified to use [`nvbio`](https://github.com/NVlabs/nvbio) or BarraCUDA for metagenotyping using MIDAS2, enabling use of GPU in the analysis. Specifically, `BarraCUDA`, `nvBWT` and `nvBowtie` are used internally. The result for metagenotyping of the subset sample `SRR19064419` is shown below (using `seqkit sample -p 0.1`). The path to `BarraCUDA`, `nvBWT` and `nvBowtie` should be set in environmental variables. Currently, the codes use `BarraCUDA` as nvBowtie outputs wrong SAM flag for unmapped reads.
 
 <p align="center">
 <img src="https://github.com/noriakis/software/blob/main/images/nvres.png?raw=true" width=400px>
