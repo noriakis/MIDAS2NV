@@ -38,14 +38,15 @@ def build_bowtie2_db(bt2_db_dir, bt2_db_name, downloaded_files, num_cores):
 
         try:
             # command(f"bowtie2-build --threads {num_cores} {bt2_db_prefix}.fa {bt2_db_prefix} > {bt2_db_dir}/bt2-db-build-{bt2_db_name}.log", quiet=False)
-            command(f"nvBWT {bt2_db_prefix}.fa {bt2_db_prefix} > {bt2_db_dir}/bt2-db-build-{bt2_db_name}.log", quiet=False)
+            # command(f"nvBWT {bt2_db_prefix}.fa {bt2_db_prefix} > {bt2_db_dir}/bt2-db-build-{bt2_db_name}.log", quiet=False)
+            tsprint(f"Running barracuda index")
+            command(f"barracuda index {bt2_db_prefix}.fa > {bt2_db_dir}/bt2-db-build-{bt2_db_name}.log", quiet=False)
         except:
             tsprint(f"Bowtie2 index {bt2_db_prefix} run into error")
             command(f"rm -f {bt2_db_prefix}.1.bt2")
             raise
 
     return bt2_db_prefix
-
 
 def bowtie2_align(bt2_db_dir, bt2_db_name, bamfile_path, args):
     """ Use Bowtie2 to map reads to prebuilt bowtie2 database """
@@ -57,44 +58,47 @@ def bowtie2_align(bt2_db_dir, bt2_db_name, bamfile_path, args):
         return
 
     # Construct bowtie2 align input arguments
+    ## Parameters for barracuda considering the users input is necessary
     max_reads = f"-u {args.max_reads}" if args.max_reads else ""
     aln_mode = "local" if args.aln_mode == "local" else "end-to-end"
     aln_speed = args.aln_speed if aln_mode == "end-to-end" else args.aln_speed + "-local"
     r2 = ""
     max_fraglen = f"-X {args.fragment_length}" if args.r2 else ""
+    #if args.r2:
+    #    r1 = f"-1 {args.r1}"
+    #    r2 = f"-2 {args.r2}"
+    #elif args.aln_interleaved:
+    #    r1 = f"--interleaved {args.r1}"
+    #else:
+    #    r1 = f"-U {args.r1}"
     if args.r2:
-        r1 = f"-1 {args.r1}"
-        r2 = f"-2 {args.r2}"
+        r1 = f"{args.r1}"
+        r2 = f"{args.r2}"
     elif args.aln_interleaved:
         r1 = f"--interleaved {args.r1}"
     else:
-        r1 = f"-U {args.r1}"
+    r1 = f"-U {args.r1}"
 
     try:
-        tsprint(f"Using nvBowtie")
+        tsprint(f"Using barracuda")
         ## Paired-end all-mode is currently not supported
-        bt2_command = f"nvBowtie -x {bt2_db_prefix} {r1} {r2} --{aln_mode} --{aln_speed} {max_fraglen} {max_reads} -S {samfile_path}"
+        #bt2_command = f"nvBowtie -x {bt2_db_prefix} {r1} {r2} --{aln_mode} --{aln_speed} {max_fraglen} {max_reads} -S {samfile_path}"
+
+        bt2_1command = f"barracuda aln -l 20 {bt2_db_prefix}.fa {r1} > {r1}.sai"
+        command(bt2_1command, quiet=False)
+        bt2_2command = f"barracuda aln -l 20 {bt2_db_prefix}.fa {r2} > {r2}.sai"
+        command(bt2_2command, quiet=False)
+        bt2_command = f"barracuda sampe {bt2_db_prefix}.fa {r1}.sai {r2}.sai {r1} {r2} > {samfile_path}"
         command(bt2_command, quiet=False)
+
         #command(f"samtools sort --threads {args.num_cores} -o {bamfile_path} {bamfile_path}")
         #bt2_command = f"bowtie2 --no-unal -x {bt2_db_prefix} {max_fraglen} {max_reads} --{aln_mode} --{aln_speed} --threads {args.num_cores} -q {r1} {r2}"
+        ## Unmapped reads are obtained
         command(f"set -o pipefail; samtools view -F4 --threads {args.num_cores} -b {samfile_path} | \
                 samtools sort --threads {args.num_cores} -o {bamfile_path}", quiet=False)
     except:
         tsprint(f"Bowtie2 align to {bamfile_path} run into error")
         command(f"rm -f {bamfile_path}")
-        raise
-
-
-def samtools_sort(bamfile_path, sorted_bamfile, debug, num_cores):
-    if debug and os.path.exists(sorted_bamfile):
-        tsprint(f"Skipping samtools sort in debug mode as temporary data exists: {sorted_bamfile}")
-        return
-
-    try:
-        command(f"samtools sort -@ {num_cores} -o {sorted_bamfile} {bamfile_path}", quiet=False) #-m 2G
-    except:
-        tsprint(f"Samtools sort {bamfile_path} run into error")
-        command(f"rm -f {sorted_bamfile}")
         raise
 
 
