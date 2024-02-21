@@ -1,7 +1,7 @@
 
 # Metagenomic Intra-Species Diversity Analysis 2
 
-This version is modified to use [`nvbio`](https://github.com/NVlabs/nvbio) or `BarraCUDA` for metagenotyping using MIDAS2, enabling use of GPU in the analysis. Specifically, `BarraCUDA`, `nvBWT` and `nvBowtie` are used internally. Currently, the codes use `BarraCUDA` as `nvBowtie` outputs wrong SAM flag for the unmapped reads. Thus, the path to `BarraCUDA` should be set in environmental variables. The installation instruction for the `BarraCUDA` is [here](https://sourceforge.net/projects/seqbarracuda/). The runtimes are compared between the original software and that uses 1 GPU (Tesla V100).
+This version is modified to use [`nvbio`](https://github.com/NVlabs/nvbio) or `BarraCUDA` for metagenotyping using MIDAS2, enabling use of GPU in the analysis. Specifically, `BarraCUDA`, `nvBWT` and `nvBowtie` are used internally. Currently, the codes use `BarraCUDA` as `nvBowtie` outputs wrong SAM flag for the unmapped reads. Thus, the path to `BarraCUDA` should be set in environmental variables. The installation instruction for the `BarraCUDA` is [here](https://sourceforge.net/projects/seqbarracuda/).
 
 
 
